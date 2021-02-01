@@ -1,0 +1,8 @@
+alembic init alembic
+alembic revision -m "nome da revisao"
+muda o upgrade ex:
+def upgrade():
+    op.add_column("users", sa.Column("Job", sa.String()))
+    pass
+
+executa python alembic upgrade head
