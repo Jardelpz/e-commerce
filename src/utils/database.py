@@ -5,23 +5,40 @@ from starlette.responses import UJSONResponse
 
 from src.utils.transaction import session_scope
 from src.schemas.user import UserInput, UserLogin, UserRecover
+from src.schemas.category import CategoryInput
 from src.models.user import User
+from src.models.category import Category
 from src.models.product import Product
+from src.models.item_cart import ItemCart
+from src.models.cart import Cart
 from src.utils.crypt import encrypt, decrypt
 from src.utils import random_token
 from src.utils.send_email import send_email
 
+# -----------------------------   user    -------------------------------------- #
 
-def insert_user(user: UserInput):
+
+def insert_user(user):
     with session_scope() as db:
-        user_to_insert = User(name=user.name, age=user.age, email=user.email, job=user.job, username=user.username,
-                              password=encrypt(user.password))
+        user_to_insert = User()
+        user_to_insert.name = user.name
+        user_to_insert.age = user.age
+        user_to_insert.email = user.email
+        user_to_insert.job = user.job
+        user_to_insert.cpf = user.cpf
+        user_to_insert.username = user.username
+        user_to_insert.password = encrypt(user.password)
+        user_to_insert.zip_code = user.zip_code
+        user_to_insert.complement = user.complement
+        user_to_insert.neighborhood = user.neighborhood
+        user_to_insert.adress_number = user.adress_number
+        user_to_insert.phone = user.phone
         db.add(user_to_insert)
-        return f"{user.name} inserted with success", HTTP_200_OK
-    pass
+        return True
+    return False
 
 
-def login(user: UserLogin):
+def login(user):
     with session_scope() as db:
         encode_password = encrypt(user.password)
         user = db.query(User).filter(
@@ -32,8 +49,8 @@ def login(user: UserLogin):
         ).first()
 
         user = user.as_dict()
-        return f"{user.get('name')} is logged in!"
-    return "Bad login, try again"
+        return user
+    return None
 
 
 def list_all_users():
@@ -49,7 +66,7 @@ def delete_user_by_id(id: int):
     with session_scope() as db:
         user = db.query(User).filter(User.id == id).first()
         db.delete(user)
-        return "delete with success"
+        return "deleted with success"
     pass
 
 
@@ -60,6 +77,13 @@ def update_user_by_id(id: int, job: str):
         db.add(user)
         return "updated"
     pass
+
+
+def create_user_cart(user):
+    with session_scope() as db:
+        cart = Cart(user_id=user.id, total=0)
+        db.add(cart)
+        return
 
 
 def generate_token(email):
@@ -75,7 +99,7 @@ def generate_token(email):
     return "User Not Found", 204
 
 
-def recover_password(user_recover: UserRecover):
+def recover_password(user_recover):
     with session_scope() as db:
         user = db.query(User).filter(
             and_(
@@ -99,21 +123,89 @@ def get_user_by_id(id: int):
     pass
 
 
-# -----------------------------   products    -------------------------------------- #
+def get_user_by_cpf(cpf: str):
+    with session_scope() as db:
+        user = db.query(User).filter(User.cpf == cpf).first()
+        return User(id=user.id, name=user.name, age=user.age, job=user.job)
+    pass
+
+
+def get_category_by_id(id: int):
+    with session_scope() as db:
+        category = db.query(Category).filter(Category.id == id).first()
+        return Category(id=category.id, name=category.name, description=category.description)
+    pass
+# -----------------------------   category    -------------------------------------- #
+
+
+def insert_category(category):
+    with session_scope() as db:
+        cat = Category(name=category.name, description=category.description)
+        db.add(cat)
+        return "Category created", HTTP_200_OK
+    pass
+
+# -----------------------------   product    -------------------------------------- #
+
 
 def insert_product(product):
     with session_scope() as db:
-        user = get_user_by_id(product.user_id)
-        p = Product(user_id=user.id, name=product.name, amount=product.amount, price=product.price)
+        category = get_category_by_id(product.category_id)
+        p = Product(category_id=category.id, name=product.name, amount=product.amount, price=product.price)
         db.add(p)
         return f"{p.name} inserted with success"
     pass
 
 
-def list_all_products_by_user(id: int):
-    products_list = []
+def get_product_by_product_id(id: int, item_amount):
     with session_scope() as db:
-        for product in db.query(Product).filter(Product.user_id == id).all():
-            products_list.append(product.as_dict())
-        return products_list
+        product = db.query(Product).filter(
+            and_(
+                Product.id == id,
+                Product.amount >= item_amount
+                )
+            ).first()
+        if product:
+            return Product(id=product.id, category_id=product.category_id, name=product.name, amount=product.amount, price=product.price)
+        return None
+
+
+def get_cart_by_user_id(id: int, total_item: float):
+    with session_scope() as db:
+        cart = db.query(Cart).filter(Cart.user_id == id).first()
+        cart.total += total_item
+        db.add(cart)
+        return Cart(id=cart.id, user_id=cart.user_id, total=cart.total)
+
+
+def insert_item_cart(item, cart, product):
+    with session_scope() as db:
+        item_cart = db.query(ItemCart).join(Cart).filter(
+            and_(
+                ItemCart.product_id == product.id,
+                ItemCart.cart_id == cart.id
+                )
+            ).first()
+        if item_cart:
+            item_cart.total += product.price * item.amount
+            item_cart.amount += item.amount
+        else:
+            item_cart_total = product.price * item.amount
+            item_cart = ItemCart(product_id=product.id, cart_id=cart.id, value=product.price,
+                                 amount=item.amount, total=item_cart_total)
+
+        db.add(item_cart)
+        return
     pass
+
+
+# def sum_all_itens_cart(item, cart, product):
+#     with session_scope() as db:
+#         total = product.price * item.amount
+#         item_cart = ItemCart(product_id=item.id, cart_id=cart.id, value=product.value,
+#                              amount=item.amount, total=total)
+#         # somar os totais dos itens e dar um update no cart
+#         cart = Cart(id=cart.id, user_id=cart.user_id, total=)
+#         # db.add(p)
+#         return,
+#     pass

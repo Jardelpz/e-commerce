@@ -2,12 +2,13 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 from src.models.base import Base
+from src.models.category import Category
 
 
 class Product(Base):
-    __tablename__ = "products"
+    __tablename__ = "product"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    category_id = Column(Integer, ForeignKey(Category.id))
     name = Column(String)
     price = Column(Float)
     amount = Column(Integer)

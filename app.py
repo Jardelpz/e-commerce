@@ -4,7 +4,9 @@ from fastapi import FastAPI, HTTPException
 
 from src import __version__
 from src.handler.user import user_router
-from src.handler.product import product
+from src.handler.product import product_router
+from src.handler.category import category_router
+from src.handler.item_cart import item_cart_router
 from src.settings import *
 
 app = FastAPI(
@@ -14,7 +16,9 @@ app = FastAPI(
 )
 
 app.include_router(user_router, prefix=BASE_PATH)
-app.include_router(product, prefix=BASE_PATH)
+app.include_router(product_router, prefix=BASE_PATH)
+app.include_router(category_router, prefix=BASE_PATH)
+app.include_router(item_cart_router, prefix=BASE_PATH)
 
 
 @app.exception_handler(HTTPException)

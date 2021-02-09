@@ -1,29 +1,28 @@
 from fastapi import APIRouter
-from starlette.responses import UJSONResponse
 
 from src.schemas.user import UserInput, UserEdit, UserLogin, UserRecover
-from src.utils.database import insert_user, list_all_users, update_user_by_id, delete_user_by_id, login, generate_token, recover_password
-from src.models.user import User
+from src.utils.database import insert_user, create_user_cart, get_user_by_cpf, list_all_users, update_user_by_id, delete_user_by_id, login, generate_token, recover_password
+from src.utils.jwt import create_access_token
 
 user_router = APIRouter()
 
 
 @user_router.get('/user/list')
 async def list_users():
-    users = list_all_users()
-    return {"users": users}
+    return {"users": list_all_users()}
 
 
 @user_router.post('/user/register')
 async def send_user(user: UserInput):
-    resp = insert_user(user)
-    return resp
+    if insert_user(user):
+        create_user_cart(get_user_by_cpf(user.cpf))
 
 
 @user_router.post('/user/login')
 async def make_login(user: UserLogin):
-    resp = login(user)
-    return resp
+    user = login(user)
+    if user:
+        return create_access_token(user)
 
 
 @user_router.delete('/user/{user_id}/delete')

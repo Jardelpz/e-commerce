@@ -6,6 +6,9 @@ from src.settings import DATABASE_URI
 from src.models.base import Base
 from src.models.user import User
 from src.models.product import Product
+from src.models.category import Category
+from src.models.item_cart import ItemCart
+from src.models.cart import Cart
 
 engine = create_engine(DATABASE_URI)
 
@@ -19,8 +22,9 @@ def session_scope():
         yield s
         s.commit()
 
-    except:
+    except Exception as e:
         s.rollback()
+        print(e)
 
     finally:
         s.close()
@@ -31,4 +35,6 @@ def recreate_database():
     Base.metadata.create_all(engine)
     print(DATABASE_URI)
 
+
 # recreate_database()
+#

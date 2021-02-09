@@ -9,3 +9,5 @@ alembic==1.4.3
 starlette
 pycrypto
 starlette
+python-jose[cryptography]
+passlib[bcrypt]
