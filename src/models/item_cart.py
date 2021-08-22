@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, Float, ForeignKey
+from datetime import datetime
+
 from src.models.base import Base
 from src.models.product import Product
 from src.models.cart import Cart
@@ -15,4 +17,4 @@ class ItemCart(Base):
     total = Column(Float)
 
     def as_dict(self):
-        return {item.name: getattr(self, item.name) for item in self.__table__.columns}
+        return {item.name: getattr(self, item.name) for item in self.__table__.columns if not isinstance(getattr(self, item.name), datetime)}

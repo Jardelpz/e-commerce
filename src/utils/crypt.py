@@ -1,7 +1,5 @@
 import base64
 
-# from src.settings import CRYPT_KEY
-
 
 def encrypt(message):
     message_bytes = message.encode()

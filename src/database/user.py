@@ -1,21 +1,11 @@
 from sqlalchemy import and_
 from datetime import datetime, timedelta
-from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST, HTTP_422_UNPROCESSABLE_ENTITY
-from starlette.responses import UJSONResponse
 
 from src.utils.transaction import session_scope
-from src.schemas.user import UserInput, UserLogin, UserRecover
-from src.schemas.category import CategoryInput
-from src.models.user import User
-from src.models.category import Category
-from src.models.product import Product
-from src.models.item_cart import ItemCart
-from src.models.cart import Cart
-from src.utils.crypt import encrypt, decrypt
+from src.models import *
+from src.utils.crypt import encrypt
 from src.utils import random_token
 from src.utils.email import send_email
-
-# -----------------------------   user    -------------------------------------- #
 
 
 def insert_user(user):
@@ -34,8 +24,7 @@ def insert_user(user):
         user_to_insert.adress_number = user.adress_number
         user_to_insert.phone = user.phone
         db.add(user_to_insert)
-        return True
-    return False
+        return user
 
 
 def login(user):
@@ -83,6 +72,7 @@ def create_user_cart(user):
         cart = Cart(user_id=user.id, total=0)
         db.add(cart)
         return
+    pass
 
 
 def generate_token(email):
@@ -92,8 +82,10 @@ def generate_token(email):
         user.token = new_token
         user.tte = datetime.now() + timedelta(minutes=5)
         db.add(user)
-        send_email(new_token, email)
+
         return new_token
+
+    raise Exception('Error sending email')
 
 
 def recover_password(user_recover):
@@ -109,9 +101,8 @@ def recover_password(user_recover):
         user.tte = None
         user.password = encrypt(user_recover.new_password)
         db.add(user)
-        return "Password updated with success"
+        return True
     pass
-
 
 def get_user_by_id(id: int):
     with session_scope() as db:
@@ -127,53 +118,3 @@ def get_user_by_cpf(cpf: str):
     pass
 
 
-def get_category_by_id(id: int):
-    with session_scope() as db:
-        category = db.query(Category).filter(Category.id == id).first()
-        return Category(id=category.id, name=category.name, description=category.description)
-    pass
-# -----------------------------   category    -------------------------------------- #
-
-
-def insert_category(category):
-    with session_scope() as db:
-        cat = Category(name=category.name, description=category.description)
-        db.add(cat)
-
-# -----------------------------   product    -------------------------------------- #
-
-
-def insert_product(product):
-    with session_scope() as db:
-        category = get_category_by_id(product.category_id)
-        p = Product(category_id=category.id, name=product.name, amount=product.amount, price=product.price)
-        db.add(p)
-        return f"{p.name} inserted with success"
-    pass
-
-
-def get_product_by_product_id(id: int, item_amount):
-    with session_scope() as db:
-        product = db.query(Product).filter(
-            and_(
-                Product.id == id,
-                Product.amount >= item_amount
-                )
-            ).first()
-        if product:
-            return Product(id=product.id, category_id=product.category_id, name=product.name, amount=product.amount, price=product.price)
-        return None
-
-
-
-
-# def sum_all_itens_cart(item, cart, product):
-#     with session_scope() as db:
-#         total = product.price * item.amount
-#         item_cart = ItemCart(product_id=item.id, cart_id=cart.id, value=product.value,
-#                              amount=item.amount, total=total)
-#         # somar os totais dos itens e dar um update no cart
-#         cart = Cart(id=cart.id, user_id=cart.user_id, total=)
-#         # db.add(p)
-#         return,
-#     pass

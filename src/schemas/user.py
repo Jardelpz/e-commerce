@@ -11,10 +11,10 @@ class UserInput(BaseModel):
     username: str
     password: str
     zip_code: str
-    complement : str
-    adress_number : str
-    neighborhood : str
-    phone : str
+    complement: str
+    adress_number: str
+    neighborhood: str
+    phone: str
 
 
 class UserLogin(BaseModel):

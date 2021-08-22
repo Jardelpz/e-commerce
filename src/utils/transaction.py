@@ -1,14 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
+from starlette.responses import JSONResponse
 
 from src.settings import DATABASE_URI
-from src.models.base import Base
-from src.models.user import User
-from src.models.product import Product
-from src.models.category import Category
-from src.models.item_cart import ItemCart
-from src.models.cart import Cart
+from src.models import *
 
 engine = create_engine(DATABASE_URI)
 

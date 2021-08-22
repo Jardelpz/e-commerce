@@ -1,13 +1,12 @@
 FROM python:3.8-slim-buster
 
-WORKDIR /srv
+MAINTAINER Jardel Pereira Zermiani
+
+ADD . /app
+
+WORKDIR /app
 
 RUN apt-get update && apt-get install
-
-
-ADD requirements.txt /srv/
-
-ADD . /srv
 
 
 RUN pip install --no-cache -U && pip install -r requirements.txt
